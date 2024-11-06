@@ -408,11 +408,11 @@ namespace InvoiceOCRApp2.Controllers
             }
 
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-            Directory.CreateDirectory(uploadsFolder); // Ensure directory exists
+            Directory.CreateDirectory(uploadsFolder); 
 
             var filePath = Path.Combine(uploadsFolder, file.FileName);
 
-            // Save the uploaded file
+            
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
@@ -420,21 +420,21 @@ namespace InvoiceOCRApp2.Controllers
 
             try
             {
-                // Perform OCR processing
+                
                 var (finalAmount, containerNumber) = await GetAmountFromOCR(filePath);
 
-                // Save file information in the database
+                
                 var invoice = new Invoice
                 {
                     ImagePath = file.FileName,
-                    Value = containerNumber, // Save the Container Number in Value
-                    FinalAmount = finalAmount > 0 ? finalAmount : 0 // Set FinalAmount to 0 if not found
+                    Value = containerNumber, 
+                    FinalAmount = finalAmount > 0 ? finalAmount : 0 
                 };
 
                 _context.Invoices.Add(invoice);
                 await _context.SaveChangesAsync();
 
-                // Optionally delete the file after processing
+                
                 System.IO.File.Delete(filePath);
                 TempData["SuccessMessage"] = "File saved successfully!";
             }
@@ -448,14 +448,14 @@ namespace InvoiceOCRApp2.Controllers
 
         private async Task<(decimal, string)> GetAmountFromOCR(string filePath)
         {
-            var apiKey = "K87668844488957"; // Replace with your actual API key
+            var apiKey = "K87668844488957"; 
             var url = "https://api.ocr.space/parse/image";
             var client = new RestClient(url);
             var request = new RestRequest();
             request.AddFile("file", filePath);
             request.AddParameter("apikey", apiKey);
             request.AddParameter("language", "eng");
-            request.Method = Method.Post; // Set the request method
+            request.Method = Method.Post; 
 
             var response = await client.ExecuteAsync(request);
 
@@ -476,7 +476,7 @@ namespace InvoiceOCRApp2.Controllers
             var amount = ExtractTotalAmountFromWords(result.ParsedResults[0].ParsedText);
             var containerNumber = ExtractContainerNumber(result.ParsedResults[0].ParsedText);
 
-            // Log the container number (or handle it as needed)
+            
             Console.WriteLine("Container Number: " + containerNumber);
 
             return (amount, containerNumber);
@@ -484,39 +484,39 @@ namespace InvoiceOCRApp2.Controllers
 
         private string ExtractContainerNumber(string text)
         {
-            // Regex pattern to find container number (e.g., RFSU2030640)
+            
             var regex1 = new Regex(@"\b([A-Z]{4}\d{7})\b", RegexOptions.IgnoreCase);
             var match1 = regex1.Match(text);
 
             if (match1.Success)
             {
-                return match1.Groups[1].Value.Trim(); // Return the first match if found
+                return match1.Groups[1].Value.Trim(); 
             }
 
-            // Second regex pattern to find additional container number formats (e.g., RFSU1234-567)
+            
             var regex2 = new Regex(@"\b([A-Z]{4}\d{4}[-\s]?\d{3})\b", RegexOptions.IgnoreCase);
             var match2 = regex2.Match(text);
 
-            // If second regex pattern matches, return the matched value
+           
             if (match2.Success)
             {
-                return match2.Groups[1].Value.Trim(); // Return the second match if found
+                return match2.Groups[1].Value.Trim(); 
             }
 
-            // If no matches are found, return 0
-            return "0"; // Return "0" as a string if no matches are found
+            
+            return "0"; 
         }
 
 
         private decimal ExtractTotalAmountFromWords(string text)
         {
-            // Regex pattern to find total amount
+           
             var regex = new Regex(@"(?:Total|Final Amount|Grand Total)[^0-9]*([0-9]+(?:\.[0-9]{1,2})?)", RegexOptions.IgnoreCase);
             var match = regex.Match(text);
 
             if (match.Success && match.Groups.Count > 1)
             {
-                // Convert the extracted amount to decimal
+                
                 if (decimal.TryParse(match.Groups[1].Value, out decimal amount))
                 {
                     return amount;
@@ -524,7 +524,7 @@ namespace InvoiceOCRApp2.Controllers
             }
 
             
-            // Return 0 if no amount found
+            
             return 0;
         }
     }
